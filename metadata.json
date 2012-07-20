@@ -2,5 +2,5 @@
 "uuid": "cinnamonitor@cinnamon.org",
 "name": "Cinnamon Process and GJS Memory Monitor",
 "description": "Monitors memory usage of cinnamon process, and GJS stuff once I figure it out",
-"icon": "utilities-system-monitor",
+"icon": "utilities-system-monitor"
 }
