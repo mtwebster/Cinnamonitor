@@ -8,9 +8,12 @@ const Cinnamon = imports.gi.Cinnamon;
 const GTop = imports.gi.GTop;
 
 const REFRESH_RATE = 1000;
+const FLAT_RANGE = 5; // (+/- xx kb/min)
+
 
 const MB = 1048576;
 const KB =    1024;
+const MINUTE = 60000;
 
 function MyApplet(orientation) {
     this._init(orientation);
@@ -39,12 +42,12 @@ MyApplet.prototype = {
     _pulse: function() {
         this.cinnamonMem.updateMem();
         let now = new Date();
-        let elapsed = (now.getTime() - this.initialTime.getTime()) / 60000; // get elapsed minutes
+        let elapsed = (now.getTime() - this.initialTime.getTime()) / MINUTE; // get elapsed minutes
         let delta = this.cinnamonMem.getDiffKb() / elapsed;
         let ttip;
-        if (delta > 0) {
+        if (delta > FLAT_RANGE) {
             ttip = "+" + delta.toFixed(2) + "k/min\n";
-        } else if (delta < 0) {
+        } else if (delta < -FLAT_RANGE) {
             ttip = delta.toFixed(2) + "k/min\n";
         } else {
             ttip = "flat\n";
@@ -52,10 +55,11 @@ MyApplet.prototype = {
         ttip += "-------\n";
         ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + "m\n";
         ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
-        ttip += "Elapsed: " + elapsed.toFixed(2) + " minutes\n";
+        let time = secondsToTime(elapsed * 60);
+        ttip += "Elapsed: " + time.h + ":" + time.m + ":" + time.s + "\n";
         ttip += "-------\n";
         ttip += "click to reset";
-        let label = this.cinnamonMem.getCurMb().toFixed(2) + "m";
+        let label = " " + this.cinnamonMem.getCurMb().toFixed(2) + "m";
         this.set_applet_label(label);
         this.set_applet_tooltip(ttip);
         Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
@@ -118,4 +122,21 @@ CinnamonMemMonitor.prototype = {
 function main(metadata, orientation) {  
     let myApplet = new MyApplet(orientation);
     return myApplet;      
+}
+
+
+function secondsToTime(secs)
+{
+    let hours = Math.floor(secs / (60 * 60));
+    let divisor_for_minutes = secs % (60 * 60);
+    let minutes = Math.floor(divisor_for_minutes / 60);
+
+    let divisor_for_seconds = divisor_for_minutes % 60;
+    let seconds = Math.ceil(divisor_for_seconds);
+    let obj = {
+            "h": hours,
+            "m": minutes,
+            "s": seconds
+    };
+    return obj;
 }
