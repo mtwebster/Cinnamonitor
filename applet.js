@@ -9,6 +9,9 @@ const GTop = imports.gi.GTop;
 
 const REFRESH_RATE = 1000;
 
+const MB = 1048576;
+const KB =    1024;
+
 function MyApplet(orientation) {
     this._init(orientation);
 }
@@ -34,19 +37,24 @@ MyApplet.prototype = {
     },
 
     _pulse: function() {
+        this.cinnamonMem.updateMem();
         let now = new Date();
-        let raw = this.cinnamonMem.getData();
         let elapsed = (now.getTime() - this.initialTime.getTime()) / 60000; // get elapsed minutes
-        let delta = ((raw - this.cinnamonMem.getStartMem())/1024) / elapsed;
+        let delta = this.cinnamonMem.getDiffKb() / elapsed;
         let ttip;
         if (delta > 0) {
-            ttip = "+" + delta.toFixed(2) + "k/min (click to reset)";
+            ttip = "+" + delta.toFixed(2) + "k/min\n";
         } else if (delta < 0) {
-            ttip = "-" + delta.toFixed(2) + "k/min (click to reset)";
+            ttip = delta.toFixed(2) + "k/min\n";
         } else {
-            ttip = "flat (click to reset)";
+            ttip = "flat\n";
         }
-        let label = (raw/1048576).toFixed(2) + "m";
+        ttip += "-------\n";
+        ttip += "Start Mb: " + this.cinnamonMem.getStartMb().toFixed(2) + "\n";
+        ttip += "Elapsed: " + elapsed.toFixed(2) + " minutes\n";
+        ttip += "-------\n";
+        ttip += "click to reset";
+        let label = this.cinnamonMem.getCurMb().toFixed(2) + "m";
         this.set_applet_label(label);
         this.set_applet_tooltip(ttip);
         Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
@@ -80,17 +88,29 @@ CinnamonMemMonitor.prototype = {
         }
     },
 
-    getData: function() {
+    updateMem: function() {
         GTop.glibtop.get_proc_mem(this.procMem, this.pid);
-        return this.procMem.resident;
     },
 
-    getStartMem: function() {
-        return this.startMem;
+    getCurMb: function() {
+        return this.procMem.resident/MB;
+    },
+
+    getStartMb: function() {
+        return this.startMem/MB;
+    },
+
+    getDiffMb: function() {
+        return (this.procMem.resident - this.startMem)/MB;
+    },
+
+    getDiffKb: function() {
+        return (this.procMem.resident - this.startMem)/KB;
     },
 
     resetStats: function() {
-        this.startMem = this.getData();
+        this.updateMem();
+        this.startMem = this.procMem.resident;
     }
 };
 
