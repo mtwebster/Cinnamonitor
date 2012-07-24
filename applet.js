@@ -50,7 +50,8 @@ MyApplet.prototype = {
             ttip = "flat\n";
         }
         ttip += "-------\n";
-        ttip += "Start Mb: " + this.cinnamonMem.getStartMb().toFixed(2) + "\n";
+        ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + "m\n";
+        ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
         ttip += "Elapsed: " + elapsed.toFixed(2) + " minutes\n";
         ttip += "-------\n";
         ttip += "click to reset";
