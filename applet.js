@@ -132,11 +132,11 @@ function secondsToTime(secs)
     let minutes = Math.floor(divisor_for_minutes / 60);
 
     let divisor_for_seconds = divisor_for_minutes % 60;
-    let seconds = Math.ceil(divisor_for_seconds);
+    let seconds = Math.floor(divisor_for_seconds);
     let obj = {
             "h": hours,
-            "m": minutes,
-            "s": seconds
+            "m": minutes < 10 ? "0" + minutes: minutes,
+            "s": seconds < 10 ? "0" + seconds: seconds
     };
     return obj;
 }
