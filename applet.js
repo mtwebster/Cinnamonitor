@@ -57,7 +57,8 @@ MyApplet.prototype = {
         ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
         let time = secondsToTime(elapsed * 60);
         ttip += "Elapsed: " + time.h + ":" + time.m + ":" + time.s + "\n";
-        ttip += "Acc. CPU usage: " + (this.cinnamonMem.getAccumulatedCpuUsage()*100).toPrecision(3) + "%\n";
+        ttip += "Acc. Cinnamon CPU%: " + (this.cinnamonMem.getCinnamonAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
+        ttip += "Acc. Total CPU%: " + (this.cinnamonMem.getTotalAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "-------\n";
         ttip += "click to reset";
 
@@ -124,10 +125,16 @@ CinnamonMemMonitor.prototype = {
         return tickDelta ? delta/tickDelta : 0;
     },
 
-    getAccumulatedCpuUsage: function() {
+    getCinnamonAccumulatedCpuUsage: function() {
         let delta = this.procTime.rtime - this.startRtime;
         let tickDelta = this.gtop.total - this.startTicks;
         return tickDelta ? delta/tickDelta : 0;
+    },
+
+    getTotalAccumulatedCpuUsage: function() {
+        let delta = this.gtop.idle - this.startIdle;
+        let tickDelta = this.gtop.total - this.startTicks;
+        return 1 - (tickDelta ? delta/tickDelta : 0);
     },
 
     getCurMb: function() {
@@ -151,6 +158,7 @@ CinnamonMemMonitor.prototype = {
         this.startMem = this.procMem.resident;
         this.startRtime = this.procTime.rtime;
         this.startTicks = this.gtop.total;
+        this.startIdle = this.gtop.idle;
     }
 };
 
