@@ -29,13 +29,12 @@ MyApplet.prototype = {
         this._orientation = orientation;
         this.cinnamonMem = new CinnamonMemMonitor();
         this.initialTime = new Date();
-        this.lastCurMb = 0;
     },
 
     _pulse: function() {
         if (this.stopped) return;
 
-        this.cinnamonMem.updateMem();
+        this.cinnamonMem.update();
         let now = new Date();
         let elapsed = (now.getTime() - this.initialTime.getTime()) / MINUTE; // get elapsed minutes
         let delta = this.cinnamonMem.getDiffKb() / elapsed;
@@ -54,12 +53,13 @@ MyApplet.prototype = {
         ttip += "Elapsed: " + time.h + ":" + time.m + ":" + time.s + "\n";
         ttip += "-------\n";
         ttip += "click to reset";
+
         let curMb = this.cinnamonMem.getCurMb().toFixed(2);
-        if (curMb != this.lastCurMb) {
-            let label = " " + curMb + "m";
-            this.set_applet_label(label);
-            this.lastCurMb = curMb;
-        }
+        let cpuUsage = (this.cinnamonMem.getCpuUsage()*100).toPrecision(2);
+        
+        let label = " " + curMb + "m, " + cpuUsage + "%";
+        this.set_applet_label(label);
+
         this.set_applet_tooltip(ttip);
         Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
     },
@@ -94,15 +94,27 @@ CinnamonMemMonitor.prototype = {
         try {
             this.pid = global.get_pid();
             this.procMem = new GTop.glibtop_proc_mem();
-            GTop.glibtop.get_proc_mem(this.procMem, this.pid);
-            this.startMem = this.procMem.resident;
+            this.procTime = new GTop.glibtop_proc_time();
+            this.gtop = new GTop.glibtop_cpu();
+
+            this.resetStats();
         } catch (e) {
             global.logError(e);
         }
     },
 
-    updateMem: function() {
+    update: function() {
         GTop.glibtop.get_proc_mem(this.procMem, this.pid);
+        this.lastRtime = this.procTime.rtime;
+        this.lastTick = this.gtop.total;
+        GTop.glibtop.get_proc_time(this.procTime, this.pid);
+        GTop.glibtop_get_cpu(this.gtop);
+    },
+    
+    getCpuUsage: function() {
+        let delta = this.procTime.rtime - this.lastRtime;
+        let tickDelta = this.gtop.total - this.lastTick;
+        return delta/(tickDelta || 1);
     },
 
     getCurMb: function() {
@@ -122,7 +134,7 @@ CinnamonMemMonitor.prototype = {
     },
 
     resetStats: function() {
-        this.updateMem();
+        this.update();
         this.startMem = this.procMem.resident;
     }
 };
