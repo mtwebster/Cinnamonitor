@@ -26,20 +26,15 @@ MyApplet.prototype = {
     _init: function(orientation) {        
         Applet.TextIconApplet.prototype._init.call(this, orientation);
         
-        try {                 
-            this.set_applet_icon_symbolic_name('utilities-system-monitor-symbolic');
-            this._orientation = orientation;
-            this.cinnamonMem = new CinnamonMemMonitor();
-            this.initialTime = new Date();
-
-            this._pulse();
-        }
-        catch (e) {
-            global.logError(e);
-        }
+        this._orientation = orientation;
+        this.cinnamonMem = new CinnamonMemMonitor();
+        this.initialTime = new Date();
+        this.lastCurMb = 0;
     },
 
     _pulse: function() {
+        if (this.stopped) return;
+
         this.cinnamonMem.updateMem();
         let now = new Date();
         let elapsed = (now.getTime() - this.initialTime.getTime()) / MINUTE; // get elapsed minutes
@@ -59,10 +54,23 @@ MyApplet.prototype = {
         ttip += "Elapsed: " + time.h + ":" + time.m + ":" + time.s + "\n";
         ttip += "-------\n";
         ttip += "click to reset";
-        let label = " " + this.cinnamonMem.getCurMb().toFixed(2) + "m";
-        this.set_applet_label(label);
+        let curMb = this.cinnamonMem.getCurMb().toFixed(2);
+        if (curMb != this.lastCurMb) {
+            let label = " " + curMb + "m";
+            this.set_applet_label(label);
+            this.lastCurMb = curMb;
+        }
         this.set_applet_tooltip(ttip);
         Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
+    },
+
+    on_applet_added_to_panel: function() {
+        this.stopped = false;
+        this._pulse();
+    },
+
+    on_applet_removed_from_panel: function(event) {
+        this.stopped = true;
     },
 
     on_applet_clicked: function(event) {
