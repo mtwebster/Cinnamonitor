@@ -26,6 +26,12 @@ MyApplet.prototype = {
     _init: function(orientation) {        
         Applet.TextIconApplet.prototype._init.call(this, orientation);
         
+        // Unless we hard-code a width, the applet will change its width dynamically,
+        // as the width of the displayed data changes.
+        this.actor.width = 100; // heuristically determined value
+        // Make label less prominent.
+        this._applet_label.set_style("font-weight: normal;");
+        
         this._orientation = orientation;
         this.cinnamonMem = new CinnamonMemMonitor();
         this.initialTime = new Date();
