@@ -30,7 +30,7 @@ MyApplet.prototype = {
         // as the width of the displayed data changes.
         this.actor.width = 100; // heuristically determined value
         // Make label less prominent.
-        this._applet_label.set_style("font-weight: normal;");
+        (this._applet_label || this._appletLabel).set_style("font-weight: normal;");
         
         this._orientation = orientation;
         this.cinnamonMem = new CinnamonMemMonitor();
