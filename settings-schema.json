@@ -1,0 +1,8 @@
+{
+ "pid-as-string" : {
+    "type" : "entry",
+    "default" : "",
+    "description" : "PID to monitor (if not found, Cinnamon's PID is used):",
+    "tooltip" : "Set the PID of the app you want to monitor here"
+ }
+}
