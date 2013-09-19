@@ -72,11 +72,12 @@ MyApplet.prototype = {
             ttip = "flat\n";
         }
         ttip += "-------\n";
+        ttip += "PID: " + this.pid.toString() + "\n";
         ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + "m\n";
         ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
         let time = secondsToTime(elapsed * 60);
         ttip += "Elapsed: " + time.h + ":" + time.m + ":" + time.s + "\n";
-        ttip += "Acc. Cinnamon CPU%: " + (this.cinnamonMem.getCinnamonAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
+        ttip += "Acc. CPU%: " + (this.cinnamonMem.getCinnamonAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "Acc. Total CPU%: " + (this.cinnamonMem.getTotalAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "-------\n";
         ttip += "click to reset";
