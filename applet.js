@@ -6,6 +6,7 @@ const Main = imports.ui.main;
 const GLib = imports.gi.GLib;
 const Cinnamon = imports.gi.Cinnamon;
 const GTop = imports.gi.GTop;
+const Settings = imports.ui.settings;
 
 const REFRESH_RATE = 1000;
 const FLAT_RANGE = 5; // (+/- xx kb/min)
@@ -15,26 +16,44 @@ const MB = 1048576;
 const KB =    1024;
 const MINUTE = 60000;
 
-function MyApplet(orientation) {
-    this._init(orientation);
+function MyApplet(orientation, panel_height, instance_id) {
+    this._init(orientation, panel_height, instance_id);
 }
 
 
 MyApplet.prototype = {
     __proto__: Applet.TextIconApplet.prototype,
 
-    _init: function(orientation) {        
-        Applet.TextIconApplet.prototype._init.call(this, orientation);
+    _init: function(orientation, panel_height, instance_id) {        
+        Applet.TextIconApplet.prototype._init.call(this, orientation, panel_height, instance_id);
         
         // Unless we hard-code a width, the applet will change its width dynamically,
         // as the width of the displayed data changes.
         this.actor.width = 100; // heuristically determined value
         // Make label less prominent.
         this._applet_label.set_style("font-weight: normal;");
-        
+
+        this.settings = new Settings.AppletSettings(this, "cinnamonitor@cinnamon.org", instance_id);
+
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                 "pid-as-string",
+                                 "pid_as_string",
+                                 this.on_settings_changed,
+                                 null);
+
+        this.on_settings_changed();
+
         this._orientation = orientation;
-        this.cinnamonMem = new CinnamonMemMonitor();
+        this.cinnamonMem = new CinnamonMemMonitor(this.pid);
         this.initialTime = new Date();
+    },
+
+    on_settings_changed: function () {
+        if (this.pid_as_string == "")
+            this.pid = global.get_pid();
+        else
+            this.pid = parseInt(this.pid_as_string);
+        this.cinnamonMem = new CinnamonMemMonitor(this.pid);
     },
 
     _pulse: function() {
@@ -92,15 +111,15 @@ MyApplet.prototype = {
     }
 };
 
-function CinnamonMemMonitor() {
-    this._init();
+function CinnamonMemMonitor(pid) {
+    this._init(pid);
 }
 
 CinnamonMemMonitor.prototype = {
 
-    _init: function() {
+    _init: function(pid) {
         try {
-            this.pid = global.get_pid();
+            this.pid = pid;
             this.procMem = new GTop.glibtop_proc_mem();
             this.procTime = new GTop.glibtop_proc_time();
             this.gtop = new GTop.glibtop_cpu();
@@ -162,8 +181,8 @@ CinnamonMemMonitor.prototype = {
     }
 };
 
-function main(metadata, orientation) {  
-    let myApplet = new MyApplet(orientation);
+function main(metadata, orientation, panel_height, instance_id) {  
+    let myApplet = new MyApplet(orientation, panel_height, instance_id);
     return myApplet;      
 }
 
