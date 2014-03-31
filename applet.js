@@ -29,15 +29,17 @@ MyApplet.prototype = {
         
         // Unless we hard-code a width, the applet will change its width dynamically,
         // as the width of the displayed data changes.
-        this.actor.width = 100; // heuristically determined value
+        this.actor.width = 100 * global.ui_scale; // heuristically determined value
         // Make label less prominent.
         this._applet_label.set_style("font-weight: normal;");
+
+        this.process_display_name = "Cinnamon";
 
         this.settings = new Settings.AppletSettings(this, "cinnamonitor@cinnamon.org", instance_id);
 
         this.settings.bindProperty(Settings.BindingDirection.IN,
-                                 "pid-as-string",
-                                 "pid_as_string",
+                                 "process-name",
+                                 "process_name",
                                  this.on_settings_changed,
                                  null);
 
@@ -48,17 +50,42 @@ MyApplet.prototype = {
         this.initialTime = new Date();
     },
 
+    get_pid_for_process_name: function (name) {
+        let success, stdout, stderr, code, error;
+        [success, stdout, stderr, code, error] = GLib.spawn_command_line_sync("ps -eo \"\%p,\%c\"");
+
+        let pid = global.get_pid();
+        this.process_display_name = "Cinnamon";
+
+        let lines = stdout.toString().split("\n");
+
+        for (let line in lines) {
+            try {
+                if (lines[line].indexOf("<defunct>") > -1) {
+                    continue;
+                }
+                if (lines[line].split(",")[1].replace(" ", "").indexOf(name) == 0) {
+                    pid = lines[line].split(",")[0].replace(" ", "");
+                    this.process_display_name = name;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+        return pid;
+    },
+
     on_settings_changed: function () {
-        if (this.pid_as_string == "")
+        if (this.process_name == "")
             this.pid = global.get_pid();
         else
-            this.pid = parseInt(this.pid_as_string);
+            this.pid = this.get_pid_for_process_name(this.process_name);
         this.cinnamonMem = new CinnamonMemMonitor(this.pid);
     },
 
     _pulse: function() {
-        if (this.stopped) return;
-
+        if (this.stopped) return false;
         this.cinnamonMem.update();
         let now = new Date();
         let elapsed = (now.getTime() - this.initialTime.getTime()) / MINUTE; // get elapsed minutes
@@ -72,6 +99,7 @@ MyApplet.prototype = {
             ttip = "flat\n";
         }
         ttip += "-------\n";
+        ttip += "Process: " + this.process_display_name + "\n";
         ttip += "PID: " + this.pid.toString() + "\n";
         ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + "m\n";
         ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
@@ -80,21 +108,21 @@ MyApplet.prototype = {
         ttip += "Acc. CPU%: " + (this.cinnamonMem.getCinnamonAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "Acc. Total CPU%: " + (this.cinnamonMem.getTotalAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "-------\n";
-        ttip += "click to reset";
+        ttip += "click to reset or reconnect to the process";
 
         let curMb = this.cinnamonMem.getCurMb().toFixed(2);
         let cpuUsage = (this.cinnamonMem.getCpuUsage()*100).toPrecision(2);
         
-        let label = " " + curMb + "m, " + cpuUsage + "%";
+        let label = this.process_display_name + ": " + curMb + "m, " + cpuUsage + "%";
         this.set_applet_label(label);
 
         this.set_applet_tooltip(ttip);
-        Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
+        return true;
     },
 
     on_applet_added_to_panel: function() {
         this.stopped = false;
-        this._pulse();
+        Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
     },
 
     on_applet_removed_from_panel: function(event) {
@@ -102,8 +130,8 @@ MyApplet.prototype = {
     },
 
     on_applet_clicked: function(event) {
-        this.cinnamonMem.resetStats();
         this.initialTime = new Date();
+        this.on_settings_changed();
     },
     
     on_orientation_changed: function (orientation) {
