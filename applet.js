@@ -82,10 +82,8 @@ MyApplet.prototype = {
         let test_string;
 
         if (this.pid.toString() == global.get_pid().toString()) {
-            log("normal")
             test_string = "0000m, 100.0%";
         } else {
-            log("custom");
             test_string = this.process_name + ": 0000m, 100.0%";
         }
 
