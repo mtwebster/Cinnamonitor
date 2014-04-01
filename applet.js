@@ -120,7 +120,7 @@ MyApplet.prototype = {
         ttip += "click to reset or reconnect to the process";
 
         let curMb = this.cinnamonMem.getCurMb().toFixed(2);
-        let cpuUsage = (this.cinnamonMem.getCpuUsage()*100).toPrecision(2);
+        let cpuUsage = (this.cinnamonMem.getCpuUsage()*100).toFixed(1);
         
         let label;
 
