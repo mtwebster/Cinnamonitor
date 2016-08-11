@@ -16,6 +16,12 @@ const MB = 1048576;
 const KB =    1024;
 const MINUTE = 60000;
 
+// max possible lengths of the label excluding process name
+// "0000.00m, 000.0%"
+const CIN_PAD_WIDTH = 16;
+// ": 0000.00m, 000.0%"
+const PAD_WIDTH = 18;
+
 function MyApplet(orientation, panel_height, instance_id) {
     this._init(orientation, panel_height, instance_id);
 }
@@ -27,7 +33,7 @@ MyApplet.prototype = {
     _init: function(orientation, panel_height, instance_id) {        
         Applet.TextIconApplet.prototype._init.call(this, orientation, panel_height, instance_id);
 
-        this._applet_label.set_style("font-weight: normal;");
+        this._applet_label.set_style("font-family: monospace; font-weight: normal;");
 
         this.process_display_name = "Cinnamon";
 
@@ -78,19 +84,6 @@ MyApplet.prototype = {
         else
             this.pid = this.get_pid_for_process_name(this.process_name);
         this.cinnamonMem = new CinnamonMemMonitor(this.pid);
-
-        let test_string;
-
-        if (this.pid.toString() == global.get_pid().toString()) {
-            test_string = "0000m, 100.0%";
-        } else {
-            test_string = this.process_name + ": 0000m, 100.0%";
-        }
-
-        let layout = this._applet_label.create_pango_layout(test_string);
-        let w, h;
-        [w, h] = layout.get_pixel_size();
-        this.actor.width = w;
     },
 
     _pulse: function() {
@@ -122,12 +115,24 @@ MyApplet.prototype = {
         let curMb = this.cinnamonMem.getCurMb().toFixed(2);
         let cpuUsage = (this.cinnamonMem.getCpuUsage()*100).toFixed(1);
         
-        let label;
+        let label, padAmount;
 
         if (this.process_display_name == "Cinnamon") {
             label = curMb + "m, " + cpuUsage + "%";
+            padAmount = CIN_PAD_WIDTH - label.length;
         } else {
-            label = this.process_display_name + ": " + curMb + "m, " + cpuUsage + "%";
+            let processName = this.process_display_name;
+            label = processName + ": " + curMb + "m, " + cpuUsage + "%";
+            padAmount = (processName.length + PAD_WIDTH) - label.length;
+        }
+
+        // pad label with spaces to ensure a static size. if the padding doesn't
+        // divide evenly, the excess is applied to the right side.
+        if (padAmount > 0) {
+            let lpad, rpad;
+            lpad = Math.floor(padAmount / 2);
+            rpad = padAmount - lpad;
+            label = " ".repeat(lpad) + label + " ".repeat(rpad);
         }
 
         this.set_applet_label(label);
