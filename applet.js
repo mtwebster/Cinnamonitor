@@ -42,7 +42,6 @@ MyApplet.prototype = {
         this.on_settings_changed();
 
         this._orientation = orientation;
-        this.cinnamonMem = new CinnamonMemMonitor(this.pid);
         this.initialTime = new Date();
     },
 
@@ -176,10 +175,10 @@ CinnamonMemMonitor.prototype = {
     },
 
     update: function() {
-        GTop.glibtop.get_proc_mem(this.procMem, this.pid);
+        GTop.glibtop_get_proc_mem(this.procMem, this.pid);
         this.lastRtime = this.procTime.rtime;
         this.lastTick = this.gtop.total;
-        GTop.glibtop.get_proc_time(this.procTime, this.pid);
+        GTop.glibtop_get_proc_time(this.procTime, this.pid);
         GTop.glibtop_get_cpu(this.gtop);
     },
     
