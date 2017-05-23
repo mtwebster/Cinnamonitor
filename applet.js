@@ -109,10 +109,13 @@ MyApplet.prototype = {
         ttip += "-------\n";
         ttip += "Process: " + this.process_display_name + "\n";
         ttip += "PID: " + this.pid.toString() + "\n";
-        ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + "m\n";
-        ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
         let time = secondsToTime(elapsed * 60);
         ttip += "Elapsed: " + time.h + ":" + time.m + ":" + time.s + "\n";
+        ttip += "-------\n";
+        ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + "m\n";
+        ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
+        ttip += "Max: " + this.cinnamonMem.getMaxMb().toFixed(2) + "m\n";
+        ttip += "-------\n";
         ttip += "Acc. CPU%: " + (this.cinnamonMem.getCinnamonAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "Acc. Total CPU%: " + (this.cinnamonMem.getTotalAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "-------\n";
@@ -180,6 +183,10 @@ CinnamonMemMonitor.prototype = {
         this.lastTick = this.gtop.total;
         GTop.glibtop_get_proc_time(this.procTime, this.pid);
         GTop.glibtop_get_cpu(this.gtop);
+
+        if (this.maxMem < this.procMem.resident) {
+            this.maxMem = this.procMem.resident;
+        }
     },
     
     getCpuUsage: function() {
@@ -208,6 +215,10 @@ CinnamonMemMonitor.prototype = {
         return this.startMem/MB;
     },
 
+    getMaxMb: function() {
+        return this.maxMem / MB;
+    },
+
     getDiffMb: function() {
         return (this.procMem.resident - this.startMem)/MB;
     },
@@ -222,6 +233,7 @@ CinnamonMemMonitor.prototype = {
         this.startRtime = this.procTime.rtime;
         this.startTicks = this.gtop.total;
         this.startIdle = this.gtop.idle;
+        this.maxMem = this.startMem;
     }
 };
 
