@@ -59,8 +59,10 @@ MyApplet.prototype = {
                 if (lines[line].indexOf("<defunct>") > -1) {
                     continue;
                 }
-                if (lines[line].split(",")[1].replace(" ", "").indexOf(name) == 0) {
-                    pid = lines[line].split(",")[0].replace(" ", "");
+
+                let split_line = lines[line].replace(" ", "").split(",");
+                if (split_line.length == 2 && split_line[1] == name) {
+                    pid = split_line[0];
                     this.process_display_name = name;
                     break;
                 }
@@ -170,6 +172,7 @@ CinnamonMemMonitor.prototype = {
             this.procMem = new GTop.glibtop_proc_mem();
             this.procTime = new GTop.glibtop_proc_time();
             this.gtop = new GTop.glibtop_cpu();
+            this.maxMem = 0;
 
             this.resetStats();
         } catch (e) {
