@@ -83,9 +83,9 @@ MyApplet.prototype = {
         let test_string;
 
         if (this.pid.toString() == global.get_pid().toString()) {
-            test_string = "0000m, 100.0%";
+            test_string = "00000.00m, 100.0%";
         } else {
-            test_string = this.process_name + ": 0000m, 100.0%";
+            test_string = this.process_name + ": 00000.00m, 100.0%";
         }
 
         let layout = this._applet_label.create_pango_layout(test_string);
