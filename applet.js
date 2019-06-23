@@ -7,6 +7,7 @@ const GLib = imports.gi.GLib;
 const Cinnamon = imports.gi.Cinnamon;
 const GTop = imports.gi.GTop;
 const Settings = imports.ui.settings;
+const Clutter = imports.gi.Clutter;
 
 const REFRESH_RATE = 1000;
 const FLAT_RANGE = 5; // (+/- xx kb/min)
@@ -80,10 +81,13 @@ MyApplet.prototype = {
             this.pid = this.get_pid_for_process_name(this.process_name);
         this.cinnamonMem = new CinnamonMemMonitor(this.pid);
 
+        this._applet_label.set_x_align(Clutter.ActorAlign.CENTER);
+        this._applet_label.set_x_expand(true);
+
         let test_string;
 
         if (this.pid.toString() == global.get_pid().toString()) {
-            test_string = "00000.00m, 100.0%";
+            test_string = "cinnamon: 00000.00m, 100.0%";
         } else {
             test_string = this.process_name + ": 00000.00m, 100.0%";
         }
@@ -91,7 +95,7 @@ MyApplet.prototype = {
         let layout = this._applet_label.create_pango_layout(test_string);
         let w, h;
         [w, h] = layout.get_pixel_size();
-        this.actor.width = w;
+        this.actor.natural_width = w;
     },
 
     _pulse: function() {
