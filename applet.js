@@ -42,6 +42,8 @@ MyApplet.prototype = {
 
         this.on_settings_changed();
 
+        this.pulse_timer_id = 0;
+
         this._orientation = orientation;
         this.initialTime = new Date();
     },
@@ -99,7 +101,6 @@ MyApplet.prototype = {
     },
 
     _pulse: function() {
-        if (this.stopped) return false;
         this.cinnamonMem.update();
         let now = new Date();
         let elapsed = (now.getTime() - this.initialTime.getTime()) / MINUTE; // get elapsed minutes
@@ -144,13 +145,21 @@ MyApplet.prototype = {
         return true;
     },
 
+    stop_pulse: function() {
+        if (this.pulse_timer_id > 0) {
+            Mainloop.source_remove(this.pulse_timer_id);
+            this.pulse_timer_id = 0;
+        }
+    },
+
     on_applet_added_to_panel: function() {
-        this.stopped = false;
-        Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
+        this.stop_pulse();
+
+        this.pulse_timer_id = Mainloop.timeout_add(REFRESH_RATE, Lang.bind(this, this._pulse));
     },
 
     on_applet_removed_from_panel: function(event) {
-        this.stopped = true;
+        this.stop_pulse();
     },
 
     on_applet_clicked: function(event) {
