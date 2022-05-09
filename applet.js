@@ -8,6 +8,7 @@ const Cinnamon = imports.gi.Cinnamon;
 const GTop = imports.gi.GTop;
 const Settings = imports.ui.settings;
 const Clutter = imports.gi.Clutter;
+const ByteArray = imports.byteArray;
 
 const REFRESH_RATE = 1000;
 const FLAT_RANGE = 5; // (+/- xx kb/min)
@@ -55,7 +56,7 @@ MyApplet.prototype = {
         let pid = global.get_pid();
         this.process_display_name = "Cinnamon";
 
-        let lines = stdout.toString().split("\n");
+        let lines = ByteArray.toString(stdout).split("\n");
 
         for (let line in lines) {
             try {
@@ -77,10 +78,18 @@ MyApplet.prototype = {
     },
 
     on_settings_changed: function () {
-        if (this.process_name == "")
+        if (this.process_name == "") {
             this.pid = global.get_pid();
+        }
         else
+        if (!isNaN(parseInt(this.process_name))) {
+            this.pid = parseInt(this.process_name);
+        }
+        else
+        {
             this.pid = this.get_pid_for_process_name(this.process_name);
+        }
+
         this.cinnamonMem = new CinnamonMemMonitor(this.pid);
 
         this._applet_label.set_x_align(Clutter.ActorAlign.CENTER);
