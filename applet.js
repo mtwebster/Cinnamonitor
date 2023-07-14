@@ -26,8 +26,11 @@ function MyApplet(orientation, panel_height, instance_id) {
 MyApplet.prototype = {
     __proto__: Applet.TextIconApplet.prototype,
 
-    _init: function(orientation, panel_height, instance_id) {        
+    _init: function(orientation, panel_height, instance_id) {
         Applet.TextIconApplet.prototype._init.call(this, orientation, panel_height, instance_id);
+
+        this.lastCurMb = 0;
+        this.maxMb = 0;
 
         this._applet_label.set_style("font-weight: normal;");
 
@@ -116,9 +119,9 @@ MyApplet.prototype = {
         let delta = this.cinnamonMem.getDiffKb() / elapsed;
         let ttip;
         if (delta > FLAT_RANGE) {
-            ttip = "+" + delta.toFixed(2) + "k/min\n";
+            ttip = "+" + delta.toFixed(2) + " k/min\n";
         } else if (delta < -FLAT_RANGE) {
-            ttip = delta.toFixed(2) + "k/min\n";
+            ttip = delta.toFixed(2) + " k/min\n";
         } else {
             ttip = "flat\n";
         }
@@ -128,9 +131,9 @@ MyApplet.prototype = {
         let time = secondsToTime(elapsed * 60);
         ttip += "Elapsed: " + time.h + ":" + time.m + ":" + time.s + "\n";
         ttip += "-------\n";
-        ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + "m\n";
-        ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + "m\n";
-        ttip += "Max: " + this.cinnamonMem.getMaxMb().toFixed(2) + "m\n";
+        ttip += "Start: " + this.cinnamonMem.getStartMb().toFixed(2) + " m\n";
+        ttip += "Diff: " + this.cinnamonMem.getDiffMb().toFixed(2) + " m\n";
+        ttip += "Max: " + this.cinnamonMem.getMaxMb().toFixed(2) + " m\n";
         ttip += "-------\n";
         ttip += "Acc. CPU%: " + (this.cinnamonMem.getCinnamonAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
         ttip += "Acc. Total CPU%: " + (this.cinnamonMem.getTotalAccumulatedCpuUsage()*100).toPrecision(3) + "\n";
@@ -138,14 +141,26 @@ MyApplet.prototype = {
         ttip += "click to reset or reconnect to the process";
 
         let curMb = this.cinnamonMem.getCurMb().toFixed(2);
+        let newCurMb = 100 * curMb;
         let cpuUsage = (this.cinnamonMem.getCpuUsage()*100).toFixed(1);
-        
+
+        let updown = (newCurMb > this.lastCurMb) ? "⇗" : (newCurMb == this.lastCurMb) ? "⇒" : "⇘"; // Symbola fonts
+        this.lastCurMb = newCurMb;
+
         let label;
 
         if (this.process_display_name == "Cinnamon") {
-            label = curMb + "m, " + cpuUsage + "%";
+            label = updown + " " + curMb + " m, " + cpuUsage + " %";
         } else {
-            label = this.process_display_name + ": " + curMb + "m, " + cpuUsage + "%";
+            label = this.process_display_name + ": " + updown + " " + curMb + " m, " + cpuUsage + " %";
+        }
+
+        if (this.maxMb < this.lastCurMb) {
+            this.maxMb = this.lastCurMb;
+            label = "*"+label;
+            //~ this.actor.set_style("color: red;");
+        } else {
+            //~ this.actor.set_style("color: #b9b9b9;");
         }
 
         this.set_applet_label(label);
@@ -175,7 +190,7 @@ MyApplet.prototype = {
         this.initialTime = new Date();
         this.on_settings_changed();
     },
-    
+
     on_orientation_changed: function (orientation) {
         this._orientation = orientation;
         // this._initContextMenu();
@@ -213,7 +228,7 @@ CinnamonMemMonitor.prototype = {
             this.maxMem = this.procMem.resident;
         }
     },
-    
+
     getCpuUsage: function() {
         let delta = this.procTime.rtime - this.lastRtime;
         let tickDelta = this.gtop.total - this.lastTick;
@@ -262,9 +277,9 @@ CinnamonMemMonitor.prototype = {
     }
 };
 
-function main(metadata, orientation, panel_height, instance_id) {  
+function main(metadata, orientation, panel_height, instance_id) {
     let myApplet = new MyApplet(orientation, panel_height, instance_id);
-    return myApplet;      
+    return myApplet;
 }
 
 
