@@ -87,6 +87,7 @@ MyApplet.prototype = {
         else
         if (!isNaN(parseInt(this.process_name))) {
             this.pid = parseInt(this.process_name);
+            this.process_display_name = `pid(${this.process_name})`;
         }
         else
         {
