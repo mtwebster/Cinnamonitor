@@ -54,7 +54,7 @@ MyApplet.prototype = {
 
     get_pid_for_process_name: function (name) {
         let success, stdout, stderr, code, error;
-        [success, stdout, stderr, code, error] = GLib.spawn_command_line_sync("ps -eo \"\%p,\%c\"");
+        [success, stdout, stderr, code, error] = GLib.spawn_command_line_sync("ps -eo \"\%p    \%c\"");
 
         let pid = global.get_pid();
         this.process_display_name = "Cinnamon";
@@ -67,7 +67,7 @@ MyApplet.prototype = {
                     continue;
                 }
 
-                let split_line = lines[line].replace(" ", "").split(",");
+                let split_line = lines[line].trim().split("    ");
                 if (split_line.length == 2 && split_line[1] == name) {
                     pid = split_line[0];
                     this.process_display_name = name;
