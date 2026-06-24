@@ -9,6 +9,7 @@ const GTop = imports.gi.GTop;
 const Settings = imports.ui.settings;
 const Clutter = imports.gi.Clutter;
 const ByteArray = imports.byteArray;
+const Util = imports.misc.util;
 
 const REFRESH_RATE = 1000;
 const FLAT_RANGE = 5; // (+/- xx kb/min)
@@ -52,48 +53,57 @@ MyApplet.prototype = {
         this.initialTime = new Date();
     },
 
-    get_pid_for_process_name: function (name) {
-        let success, stdout, stderr, code, error;
-        [success, stdout, stderr, code, error] = GLib.spawn_command_line_sync("ps -eo \"\%p    \%c\"");
+    get_pid_for_process_name: function (name, callback) {
+        // Run ps asynchronously - a synchronous spawn here blocks Cinnamon's
+        // main loop for as long as ps takes, which can be many seconds when a
+        // process is stuck in uninterruptible (D) state (e.g. just after login).
+        Util.spawnCommandLineAsyncIO("ps -eo \"\%p    \%c\"", (stdout) => {
+            let pid = global.get_pid();
+            this.process_display_name = "Cinnamon";
 
-        let pid = global.get_pid();
-        this.process_display_name = "Cinnamon";
+            let lines = stdout.split("\n");
 
-        let lines = ByteArray.toString(stdout).split("\n");
+            for (let line in lines) {
+                try {
+                    if (lines[line].indexOf("<defunct>") > -1) {
+                        continue;
+                    }
 
-        for (let line in lines) {
-            try {
-                if (lines[line].indexOf("<defunct>") > -1) {
+                    let split_line = lines[line].trim().split("    ");
+                    if (split_line.length == 2 && split_line[1] == name) {
+                        pid = split_line[0];
+                        this.process_display_name = name;
+                        break;
+                    }
+                } catch (e) {
                     continue;
                 }
-
-                let split_line = lines[line].trim().split("    ");
-                if (split_line.length == 2 && split_line[1] == name) {
-                    pid = split_line[0];
-                    this.process_display_name = name;
-                    break;
-                }
-            } catch (e) {
-                continue;
             }
-        }
-        return pid;
+            callback(pid);
+        });
     },
 
     on_settings_changed: function () {
         if (this.process_name == "") {
             this.pid = global.get_pid();
+            this._finish_settings_changed();
         }
         else
         if (!isNaN(parseInt(this.process_name))) {
             this.pid = parseInt(this.process_name);
             this.process_display_name = `pid(${this.process_name})`;
+            this._finish_settings_changed();
         }
         else
         {
-            this.pid = this.get_pid_for_process_name(this.process_name);
+            this.get_pid_for_process_name(this.process_name, (pid) => {
+                this.pid = pid;
+                this._finish_settings_changed();
+            });
         }
+    },
 
+    _finish_settings_changed: function () {
         this.cinnamonMem = new CinnamonMemMonitor(this.pid);
 
         this._applet_label.set_x_align(Clutter.ActorAlign.CENTER);
@@ -110,6 +120,11 @@ MyApplet.prototype = {
     },
 
     _pulse: function() {
+        // cinnamonMem is created asynchronously once the process is resolved;
+        // skip ticks until it exists.
+        if (!this.cinnamonMem) {
+            return true;
+        }
         this.cinnamonMem.update();
         let now = new Date();
         let elapsed = (now.getTime() - this.initialTime.getTime()) / MINUTE; // get elapsed minutes
