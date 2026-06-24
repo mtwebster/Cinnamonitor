@@ -100,12 +100,8 @@ MyApplet.prototype = {
         this._applet_label.set_x_expand(true);
 
         let test_string;
-
-        if (this.pid.toString() == global.get_pid().toString()) {
-            test_string = "cinnamon: 00000.00m, 100.0%";
-        } else {
-            test_string = this.process_name + ": 00000.00m, 100.0%";
-        }
+        // global.log(this.pid.toString(), global.get_pid().toString())
+        test_string = "*" + this.process_display_name + ": ⇒ 00000.00 m, 100.0%";
 
         let layout = this._applet_label.create_pango_layout(test_string);
         let w, h;
@@ -154,14 +150,6 @@ MyApplet.prototype = {
             label = updown + " " + curMb + " m, " + cpuUsage + " %";
         } else {
             label = this.process_display_name + ": " + updown + " " + curMb + " m, " + cpuUsage + " %";
-        }
-
-        if (this.maxMb < this.lastCurMb) {
-            this.maxMb = this.lastCurMb;
-            label = "*"+label;
-            //~ this.actor.set_style("color: red;");
-        } else {
-            //~ this.actor.set_style("color: #b9b9b9;");
         }
 
         this.set_applet_label(label);
